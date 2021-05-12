@@ -2,7 +2,6 @@ import h5py
 import os
 import numpy as np
 import pandas as pd
-# from matplotlib import pyplot as plt
 from create_rawData import RawDataCreation
 
 
@@ -11,7 +10,7 @@ class Preparation:
     TO DO
     After data pre-processing
     """
-    datadir = RawDataCreation.datadir  # gets the directory of "data" folder
+    data_dir = RawDataCreation.datadir  # gets the directory of "data" folder
     head_facial_features_ID = ["head", "facial"]  # Order is important
     attrs_4_validation_hd_file_head_face = {'m1': 40, 'm10': 40, 'm11': 39, 'm12': 41, 'm13': 42, 'm14': 40, 'm15': 36,
                                             'm16': 40, 'm17': 42, 'm18': 38, 'm19': 39, 'm3': 40, 'm4': 40, 'm5': 42,
@@ -23,19 +22,19 @@ class Preparation:
                                    'InnerBrowRaise', 'EyeClosure', 'NoseWrinkle', 'UpperLipRaise', 'LipSuck',
                                    'LipPress', 'MouthOpen', 'ChinRaise', 'Smirk', 'LipPucker', 'Cheek Raise', 'Dimpler',
                                    'Eye Widen', 'Lid Tighten', 'Lip Stretch', 'Jaw Drop']
-    convet_sec_2_milis = 1000
-    reaction_time_list = [0.7, 0.85, 1, 1.15, 1.3, 1.5, 1.65]
+    convert_sec_2_millis = 1000
+    reaction_time_list = np.arange(0.6, 1.7, 0.1)
 
     def __init__(self, reaction_time=1):
         self.reaction_time = reaction_time  # The facial expression we want to analyze
-        self.hd_file_head = os.path.join(Preparation.datadir,
+        self.hd_file_head = os.path.join(Preparation.data_dir,
                                          "{}_DB.hd5".format(Preparation.head_facial_features_ID[0]))
-        self.hd_file_face = os.path.join(Preparation.datadir,
+        self.hd_file_face = os.path.join(Preparation.data_dir,
                                          "{}_DB.hd5".format(Preparation.head_facial_features_ID[1]))
-        self.demographicData = os.path.join(Preparation.datadir, "demographicData.xlsx")
+        self.demographicData = os.path.join(Preparation.datdata_diradir, "demographicData.xlsx")
         self.set_meta_data()
-        self.hazardPressesQualtrics = os.path.join(Preparation.datadir, "hazardPressesQualtrics.xlsx")
-        self.hd_file_head_face = os.path.join(Preparation.datadir, "head_face_DB.hd5")
+        self.hazardPressesQualtrics = os.path.join(Preparation.data_dir, "hazardPressesQualtrics.xlsx")
+        self.hd_file_head_face = os.path.join(Preparation.data_dir, "head_face_DB.hd5")
         self.section_length = int(self.reaction_time * self.fps)
 
     def set_subjects_ID(self, hdf5_face_DB, hdf5_head_DB):
@@ -75,32 +74,6 @@ class Preparation:
         hdf5_face_DB.close()
         hdf5_head_DB.close()
 
-    def get_hazard_descriptive_statistics(self):
-        hazard_descriptive_statistics = pd.DataFrame([], columns=["Movie", "Total differents hazards", "Total presses",
-                                                                  "Total participants have been this road",
-                                                                  "mean presses per participant in movie"])
-        for m in self.mIDs:
-            # m=p.mIDs[1]
-            hazard_m_data = pd.read_excel(self.hazardPressesQualtrics, sheet_name=m)
-            hazard_m_data = hazard_m_data.iloc[:-3, :]
-            hazard_m_data = hazard_m_data.drop(["Movie", "Participant"], axis=1)
-            total_differents_hazards = hazard_m_data.shape[1] - 2
-            total_presses = np.sum(hazard_m_data["Total number of presses"])
-            total_participants_have_been_road = np.sum(
-                hazard_m_data["The number of times they have been this way"].notnull())
-            mean_presses = np.mean(hazard_m_data["Total number of presses"])
-            new_row = pd.DataFrame(
-                [(m, total_differents_hazards, total_presses, total_participants_have_been_road, mean_presses)],
-                columns=["Movie", "Total differents hazards", "Total presses", "Total participants have been this road",
-                         "mean presses per participant in movie"])
-            hazard_descriptive_statistics = hazard_descriptive_statistics.append(new_row)
-        hazard_descriptive_statistics_per_col = {}
-        hazard_descriptive_statistics_no_movie_col = hazard_descriptive_statistics.iloc[:, 1:].apply(pd.to_numeric)
-        for col in hazard_descriptive_statistics_no_movie_col.columns:
-            hazard_descriptive_statistics_per_col[col] = pd.DataFrame(
-                hazard_descriptive_statistics_no_movie_col[col].describe())
-        return hazard_descriptive_statistics, hazard_descriptive_statistics_per_col
-
     def check_subjects_not_in_both_DBs(self, subject, movie, m_db_head, m_db_face, subjects_not_in_both_DBs):
         is_subject_not_in_both_DBs = False
         if not subject in m_db_head:
@@ -125,7 +98,7 @@ class Preparation:
     def combine_face_head_DB(self):
         hdf5_face_DB = h5py.File(self.hd_file_face, "a")
         hdf5_head_DB = h5py.File(self.hd_file_head, "a")
-        hd5dir_face_head = os.path.join(Preparation.datadir, "head_face_DB.hd5")
+        hd5dir_face_head = os.path.join(Preparation.data_dir, "head_face_DB.hd5")
         hd = h5py.File(hd5dir_face_head, "a")
         subjects_not_in_both_DBs = pd.DataFrame([], columns=["Movie", "Participant", "DB name"])
         num_subject_per_movie = {}
@@ -321,7 +294,7 @@ class Preparation:
         return not_used_sections_counter, sections_counter, not_used_sections_df, all_data_splitted_df
 
     def split_data_by_reaction_time(self):
-        # p=Preparation()
+        # p=Preparation(reaction_time=1.7)
         hdf5_head_face_DB = self.get_hd_file_head_face()
         sections_counter = 0
         not_used_sections_counter = 0
@@ -329,7 +302,7 @@ class Preparation:
         not_used_sections_df = pd.DataFrame([], columns=["Movie", "Participant", "label",
                                                          "section"] + Preparation.head_face_features_by_order)
         features_2_save = ['label', 'section'] + Preparation.head_face_features_by_order
-        splitted_data_DB = os.path.join(Preparation.datadir, "reaction_time_{:s}_splitted_data_DB.hd5".format(str(self.reaction_time)))
+        splitted_data_DB = os.path.join(Preparation.data_dir, "reaction_time_{:s}_splitted_data_DB.hd5".format(str(self.reaction_time)))
         hd = h5py.File(splitted_data_DB, "a")
         for m in self.mIDs:
             # m=p.mIDs[0]
@@ -357,7 +330,7 @@ class Preparation:
                     s_hazards = s_hazards.values
                 else:
                     s_hazards = s_hazards.values
-                hazard_time_milis = np.sort(np.round(s_hazards * Preparation.convet_sec_2_milis, 0))
+                hazard_time_milis = np.sort(np.round(s_hazards * Preparation.convert_sec_2_millis, 0))
                 s_data_head_face = pd.DataFrame(hdf5_head_face_DB[m]["processed_data"][s][()],
                                                 columns=Preparation.head_face_features_by_order)
                 not_used_sections_counter, sections_counter, not_used_sections_df, all_data_splitted_df = self.split_df_by_hazard(
@@ -376,10 +349,47 @@ class Preparation:
         all_data_splitted_df = all_data_splitted_df.apply(pd.to_numeric)
         splitted_data.create_dataset("splitted_data_2_use", data=all_data_splitted_df)
         splitted_data.attrs.create("reaction_time", self.reaction_time)
+        splitted_data.attrs.create("features_names", list(all_data_splitted_df.columns))
         splitted_data.attrs.create("section_length", self.section_length)
+        splitted_data.attrs.create("fps", self.fps)
         splitted_data.attrs.create("sections_counter", sections_counter)
-        splitted_data.attrs.create("not_used_sections_counter", not_used_sections_counter)
         hd.close()
         hdf5_head_face_DB.close()
         return not_used_sections_counter, sections_counter, not_used_sections_df, all_data_splitted_df
+
+def save_only_sections_without_NaN():
+    string_2_look_for = "reaction_time"
+    hdf5_files_names_list = sorted(list(set([hdf5_dir for hdf5_dir in os.listdir(Preparation.data_dir) if (string_2_look_for in hdf5_dir) & (hdf5_dir.endswith(".hd5"))])))
+    for hdf5_dir in hdf5_files_names_list:
+        hd_dir = os.path.join(Preparation.data_dir, hdf5_dir)
+        print(hdf5_dir)
+        #hd_dir = "C:\\Users\Coral\\facial head behavior and road hazard perceptions\\data\\reaction_time_1.65_splitted_data_DB.hd5"
+        hd = h5py.File(hd_dir, "a")
+        hd_DB = hd["splitted_data"]
+        features_name = hd_DB.attrs["features_names"]
+        data = pd.DataFrame(data = hd_DB["splitted_data_2_use"][()], columns=features_name)
+        no_NaN_data = pd.DataFrame([], columns=features_name)
+        section_length = hd_DB.attrs["section_length"]
+        data_without_nan = data.dropna()
+        data_group_by_sections_label_count = data_without_nan.groupby(by='section')["label"].count()
+        sections_id_list = data_group_by_sections_label_count.index.tolist() # index represent section ID
+        for section_id in sections_id_list:
+            #section_id = sections_id_list[0]
+            if data_group_by_sections_label_count[section_id] != section_length:
+                continue
+            no_NaN_data = no_NaN_data.append(data[data['section']==section_id], ignore_index=True, sort=False)
+        if "no_NaN_splitted_data" in hd:
+            del hd["no_NaN_splitted_data"]
+            no_NaN_splitted_data = hd.create_group("no_NaN_splitted_data")
+        else:
+            no_NaN_splitted_data = hd.create_group("no_NaN_splitted_data")
+        no_NaN_data = no_NaN_data.apply(pd.to_numeric)
+        no_NaN_splitted_data.create_dataset("splitted_data_2_use", data=no_NaN_data)
+        no_NaN_splitted_data.attrs.create("reaction_time", hd_DB.attrs["reaction_time"])
+        no_NaN_splitted_data.attrs.create("features_names", hd_DB.attrs["features_names"])
+        no_NaN_splitted_data.attrs.create("section_length", section_length)
+        no_NaN_splitted_data.attrs.create("fps", hd_DB.attrs["fps"])
+        no_NaN_splitted_data.attrs.create("sections_counter", hd_DB.attrs["sections_counter"])
+        hd.close()
+        return no_NaN_data
 
