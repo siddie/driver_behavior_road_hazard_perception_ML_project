@@ -7,20 +7,26 @@ import matplotlib.pyplot as plt
 from data_preparation import Preparation
 
 
-class data_exploration:
+class Data_exploration:
     data_dir = Preparation.data_dir  # gets the directory of "data" folder
     head_facial_features_ID = Preparation.head_facial_features_ID  # Order is important
     cols_2_drop_hazardPressesQualtrics_file = Preparation.cols_2_drop_hazardPressesQualtrics_file
     head_face_features_by_order = Preparation.head_face_features_by_order
     convet_sec_2_milis = 1000
+    features = ['Pitch', 'Yaw', 'Roll', 'Anger',
+       'Sadness', 'Disgust', 'Joy', 'Surprise', 'Fear', 'Contempt',
+       'Brow Furrow', 'Brow Raise', 'Lip Corner Depressor', 'InnerBrowRaise',
+       'EyeClosure', 'NoseWrinkle', 'UpperLipRaise', 'LipSuck', 'LipPress',
+       'MouthOpen', 'ChinRaise', 'Smirk', 'LipPucker', 'Cheek Raise',
+       'Dimpler', 'Eye Widen', 'Lid Tighten', 'Lip Stretch', 'Jaw Drop'] # no section label MediaTime Participant
 
     def __init__(self, reaction_time=1.7, fps=30):
         self.reaction_time = reaction_time  # The facial expression we want to analyze
-        self.hd_file_db= os.path.join(data_exploration.data_dir,"reaction_time_{}_splitted_data_DB.hd5".format(reaction_time))
+        self.hd_file_db= os.path.join(Data_exploration.data_dir,"reaction_time_{}_splitted_data_DB.hd5".format(reaction_time))
         if not os.path.isfile(self.hd_file_db):
             print("can't find hdf5 file for reaction time {}, please try again".format(reaction_time))
-        self.demographicData = os.path.join(data_exploration.data_dir, "demographicData.xlsx")
-        self.hazardPressesQualtrics = os.path.join(data_exploration.data_dir, "hazardPressesQualtrics.xlsx")
+        self.demographicData = os.path.join(Data_exploration.data_dir, "demographicData.xlsx")
+        self.hazardPressesQualtrics = os.path.join(Data_exploration.data_dir, "hazardPressesQualtrics.xlsx")
         self.fps = fps # to remove
         self.set_meta_data()
 
@@ -50,14 +56,15 @@ class data_exploration:
         plt.savefig(title + ".png")
 
     def correlation_matrix(self):
+        data_features_lable = self.data.drop(["section", "MediaTime", "Participant", "label"], axis=1)
         fig, ax = plt.subplots(1, 1, figsize=(20, 10))
-        sns.heatmap(self.data.corr(), ax=ax, cmap='coolwarm', annot=True, fmt='.2f', linewidths=0.05)
+        sns.heatmap(data_features_lable.corr(), ax=ax, cmap='coolwarm', annot=True, fmt='.2f', linewidths=0.05)
         title = "Correlation Matrix"
         plt.title(title)
         plt.savefig(title + "_all_features.png")
 
     def correlation_matrix_by_threshold(self, threshold=0.3):
-        data_features_lable = self.data.drop(["section", "MediaTime", "Participant"], axis=1)
+        data_features_lable = self.data.drop(["section", "MediaTime", "Participant", "label"], axis=1)
         components = list()
         visited = set()
         corr_matrix = data_features_lable.corr()
@@ -86,21 +93,28 @@ class data_exploration:
             plt.title(title)
             plt.savefig(title + "_" + str(counter) + ".png")
 
+    def boxplot_target_other_feature(self, feature_name):
+        plt.figure(figsize=(15, 8))
+        sns.boxplot(x='label', y=feature_name, data=self.data, palette='rainbow')
+        title = "{} by target".format(feature_name)
+        plt.title(title)
+        plt.savefig(title + ".png")
+
     def plots_data_exploration(self, threshold=0.3):
-        #d = data_exploration()
+        #d = Data_exploration()
         #d.plots_data_exploration(threshold=0.3)
         self.plot_label_distribution()
         self.correlation_matrix()
         self.correlation_matrix_by_threshold(threshold=threshold)
-
-
+        for feature in Data_exploration.features:
+            self.boxplot_target_other_feature(feature)
 
     def get_hazard_descriptive_statistics(self):
         hazard_descriptive_statistics = pd.DataFrame([], columns=["Movie", "Total differents hazards", "Total presses",
                                                                   "Total participants have been this road",
                                                                   "mean presses per participant in movie"])
-        for m in self.mIDs:
-            # m=p.mIDs[1]
+        for m in Preparation(reaction_time=self.reaction_time).mIDs:
+             #m=Preparation(reaction_time=d.reaction_time).mIDs[0]
             hazard_m_data = pd.read_excel(self.hazardPressesQualtrics, sheet_name=m)
             hazard_m_data = hazard_m_data.iloc[:-3, :]
             hazard_m_data = hazard_m_data.drop(["Movie", "Participant"], axis=1)
