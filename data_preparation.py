@@ -31,7 +31,7 @@ class Preparation:
                                          "{}_DB.hd5".format(Preparation.head_facial_features_ID[0]))
         self.hd_file_face = os.path.join(Preparation.data_dir,
                                          "{}_DB.hd5".format(Preparation.head_facial_features_ID[1]))
-        self.demographicData = os.path.join(Preparation.datdata_diradir, "demographicData.xlsx")
+        self.demographicData = os.path.join(Preparation.data_dir, "demographicData.xlsx")
         self.set_meta_data()
         self.hazardPressesQualtrics = os.path.join(Preparation.data_dir, "hazardPressesQualtrics.xlsx")
         self.hd_file_head_face = os.path.join(Preparation.data_dir, "head_face_DB.hd5")
